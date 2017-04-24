@@ -1,0 +1,245 @@
+<div class="apidocDiv">
+<style>
+/*csslint
+*/
+.apidocDiv {
+    background: #fff;
+    font-family: Arial, Helvetica, sans-serif;
+}
+.apidocDiv a[href] {
+    color: #33f;
+    font-weight: bold;
+    text-decoration: none;
+}
+.apidocDiv a[href]:hover {
+    text-decoration: underline;
+}
+.apidocCodeCommentSpan {
+    background: #bbf;
+    color: #000;
+    display: block;
+}
+.apidocCodeKeywordSpan {
+    color: #d00;
+    font-weight: bold;
+}
+.apidocCodePre {
+    background: #eef;
+    border: 1px solid;
+    color: #777;
+    padding: 5px;
+    white-space: pre-wrap;
+}
+.apidocFooterDiv {
+    margin-top: 20px;
+    text-align: center;
+}
+.apidocModuleLi {
+    margin-top: 10px;
+}
+.apidocSectionDiv {
+    border-top: 1px solid;
+    margin-top: 20px;
+}
+.apidocSignatureSpan {
+    color: #777;
+    font-weight: bold;
+}
+</style>
+<h1>api documentation for
+    <a
+
+        href="https://github.com/segmentio/xml-parser"
+
+    >xml-parser (v1.2.1)</a>
+</h1>
+<h4>the little xml parser that could</h4>
+<div class="apidocSectionDiv"><a
+    href="#apidoc.tableOfContents"
+    id="apidoc.tableOfContents"
+><h1>table of contents</h1></a><ol>
+
+    <li class="apidocModuleLi"><a href="#apidoc.module.xml-parser">module xml-parser</a><ol>
+
+        <li>
+
+            <a class="apidocElementLiA" href="#apidoc.element.xml-parser.xml-parser">
+            function <span class="apidocSignatureSpan"></span>xml-parser
+            <span class="apidocSignatureSpan">(xml)</span>
+            </a>
+
+        </li>
+
+    </ol></li>
+
+</ol></div>
+
+<div class="apidocSectionDiv">
+<h1><a href="#apidoc.module.xml-parser" id="apidoc.module.xml-parser">module xml-parser</a></h1>
+
+
+    <h2>
+        <a href="#apidoc.element.xml-parser.xml-parser" id="apidoc.element.xml-parser.xml-parser">
+        function <span class="apidocSignatureSpan"></span>xml-parser
+        <span class="apidocSignatureSpan">(xml)</span>
+        </a>
+    </h2>
+    <ul>
+    <li>description and source-code<pre class="apidocCodePre">function parse(xml) {
+  xml = xml.trim();
+
+  // strip comments
+  xml = xml.replace(/&#x3c;!--[\s\S]*?--&#x3e;/g, &#x27;&#x27;);
+
+  return document();
+
+<span class="apidocCodeCommentSpan">  /**
+   * XML document.
+   */
+</span>
+  function document() {
+    return {
+      declaration: declaration(),
+      root: tag()
+    }
+  }
+
+  /**
+   * Declaration.
+   */
+
+  function declaration() {
+    var m = match(/^&#x3c;\?xml\s*/);
+    if (!m) return;
+
+    // tag
+    var node = {
+      attributes: {}
+    };
+
+    // attributes
+    while (!(eos() || is(&#x27;?&#x3e;&#x27;))) {
+      var attr = attribute();
+      if (!attr) return node;
+      node.attributes[attr.name] = attr.value;
+    }
+
+    match(/\?&#x3e;\s*/);
+
+    return node;
+  }
+
+  /**
+   * Tag.
+   */
+
+  function tag() {
+    debug(&#x27;tag %j&#x27;, xml);
+    var m = match(/^&#x3c;([\w-:.]+)\s*/);
+    if (!m) return;
+
+    // name
+    var node = {
+      name: m[1],
+      attributes: {},
+      children: []
+    };
+
+    // attributes
+    while (!(eos() || is(&#x27;&#x3e;&#x27;) || is(&#x27;?&#x3e;&#x27;) || is(&#x27;/&#x3e;&#x27;))) {
+      var attr = attribute();
+      if (!attr) return node;
+      node.attributes[attr.name] = attr.value;
+    }
+
+    // self closing tag
+    if (match(/^\s*\/&#x3e;\s*/)) {
+      return node;
+    }
+
+    match(/\??&#x3e;\s*/);
+
+    // content
+    node.content = content();
+
+    // children
+    var child;
+    while (child = tag()) {
+      node.children.push(child);
+    }
+
+    // closing
+    match(/^&#x3c;\/[\w-:.]+&#x3e;\s*/);
+
+    return node;
+  }
+
+  /**
+   * Text content.
+   */
+
+  function content() {
+    debug(&#x27;content %j&#x27;, xml);
+    var m = match(/^([^&#x3c;]*)/);
+    if (m) return m[1];
+    return &#x27;&#x27;;
+  }
+
+  /**
+   * Attribute.
+   */
+
+  function attribute() {
+    debug(&#x27;attribute %j&#x27;, xml);
+    var m = match(/([\w:-]+)\s*=\s*(&#x22;[^&#x22;]*&#x22;|&#x27;[^&#x27;]*&#x27;|\w+)\s*/);
+    if (!m) return;
+    return { name: m[1], value: strip(m[2]) }
+  }
+
+  /**
+   * Strip quotes from `val`.
+   */
+
+  function strip(val) {
+    return val.replace(/^[&#x27;&#x22;]|[&#x27;&#x22;]$/g, &#x27;&#x27;);
+  }
+
+  /**
+   * Match `re` and advance the string.
+   */
+
+  function match(re) {
+    var m = xml.match(re);
+    if (!m) return;
+    xml = xml.slice(m[0].length);
+    return m;
+  }
+
+  /**
+   * End-of-source.
+   */
+
+  function eos() {
+    return 0 == xml.length;
+  }
+
+  /**
+   * Check for `prefix`.
+   */
+
+  function is(prefix) {
+    return 0 == xml.indexOf(prefix);
+  }
+}</pre></li>
+    <li>example usage<pre class="apidocCodePre">n/a</pre></li>
+    </ul>
+
+
+</div>
+
+<div class="apidocFooterDiv">
+    [ this document was created with
+    <a href="https://github.com/kaizhu256/node-utility2" target="_blank">utility2</a>
+    ]
+</div>
+</div>
